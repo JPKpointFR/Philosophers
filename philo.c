@@ -6,11 +6,27 @@
 /*   By: cisse <cisse@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 23:48:40 by cisse             #+#    #+#             */
-/*   Updated: 2025/03/13 03:47:03 by cisse            ###   ########.fr       */
+/*   Updated: 2025/03/18 23:41:06 by cisse            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+
+void	leave_life(t_dinner *table, pthread_t *ids)
+{
+	int	i;
+
+	i = -1;
+	while (++i < table->nb_philos)
+		pthread_join(ids[i], NULL);
+	i = -1;
+	while (++i < table->nb_philos)
+		pthread_mutex_destroy(&table->philos[i].fork);
+	pthread_mutex_destroy(&table->print);
+	pthread_mutex_destroy(&table->check);
+	free(table->philos);
+	free(ids);
+}
 
 int	main(int argc, char **argv)
 {
@@ -24,6 +40,9 @@ int	main(int argc, char **argv)
 	i = -1;
 	while (++i < table.nb_philos)
 	{
+		pthread_mutex_lock(&table.check);
+		table.philos[i].last_meal = table.start_time;
+		pthread_mutex_unlock(&table.check);
 		if (pthread_create(&ids[i], NULL, &live, &table.philos[i]))
 		{
 			printf("error: pthread_create()");
@@ -31,9 +50,6 @@ int	main(int argc, char **argv)
 			free(ids);
 			return (667);
 		}
-		pthread_mutex_lock(&table.check);
-		table.philos[i].last_meal = table.start_time;
-		pthread_mutex_unlock(&table.check);
 	}
 	check_death(&table);
 	leave_life(&table, ids);

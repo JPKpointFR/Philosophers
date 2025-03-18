@@ -1,7 +1,7 @@
 NAME = philo
 CC = cc
-CFLAGS =  -Wall -Wextra -Werror -g
-SRCS = framework.c init_args.c live.c philo.c utils.c
+CFLAGS = -Wall -Wextra -Werror -g
+SRCS = framework.c init_args.c live.c philo.c dead.c time.c print.c
 OBJS = $(SRCS:.c=.o)
 HEADER = philo.h
 

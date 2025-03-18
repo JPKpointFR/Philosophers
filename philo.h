@@ -6,7 +6,7 @@
 /*   By: cisse <cisse@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 23:48:18 by cisse             #+#    #+#             */
-/*   Updated: 2025/03/17 17:49:33 by cisse            ###   ########.fr       */
+/*   Updated: 2025/03/18 19:26:49 by cisse            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,3 +65,4 @@ void	leave_life(t_dinner *table, pthread_t *ids);
 void	check_death(t_dinner *table);
 void	*live(void *philo);
 void	print_status(t_philo *philo, int status, int is_locked);
+char	*get_status(int status);
