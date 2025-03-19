@@ -6,83 +6,121 @@
 /*   By: cisse <cisse@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/18 19:32:03 by cisse             #+#    #+#             */
-/*   Updated: 2025/03/18 23:40:55 by cisse            ###   ########.fr       */
+/*   Updated: 2025/03/19 22:06:24 by cisse            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-static int check_one_philo(t_dinner *table, int i, size_t now)
+// void	check_death(t_dinner *table)
+// {
+// 	int	i;
+// 	int	dead;
+
+// 	while (!table->sated)
+// 	{
+// 		i = -1;
+// 		pthread_mutex_lock(&table->check);
+// 		dead = !table->dead;
+// 		pthread_mutex_unlock(&table->check);
+// 		while (dead && ++i < table->nb_philos)
+// 		{
+// 			pthread_mutex_lock(&table->check);
+// 			if ((time_now() - table->philos[i].last_meal) > (size_t)table->time_to_die)
+// 			{
+// 				print_status(&table->philos[i], DEAD, 1);
+// 				table->dead = 1;
+// 			}
+// 			pthread_mutex_unlock(&table->check);
+// 			usleep(100);
+// 			pthread_mutex_lock(&table->check);
+// 			dead = !table->dead;
+// 			pthread_mutex_unlock(&table->check);
+// 		}
+// 		pthread_mutex_lock(&table->check);
+// 		dead = table->dead;
+// 		pthread_mutex_unlock(&table->check);
+// 		if (dead)
+// 			break ;
+// 		i = 0;
+// 		pthread_mutex_lock(&table->check);
+// 		dead = (table->philos[i].nb_meal >= table->nb_meals);
+// 		pthread_mutex_unlock(&table->check);
+// 		while ((table->nb_meals != -1) && (i < table->nb_philos) && dead)
+// 		{
+// 			pthread_mutex_lock(&table->check);
+// 			dead = (table->philos[i].nb_meal >= table->nb_meals);
+// 			pthread_mutex_unlock(&table->check);
+// 			i++;
+// 		}
+// 		if (i == table->nb_philos)
+// 		{
+// 			pthread_mutex_lock(&table->check);
+// 			table->sated = 1;
+// 			pthread_mutex_unlock(&table->check);
+// 		}
+// 	}
+// }
+
+static int	check_philo_death(t_dinner *table)
 {
+	int	i;
+	int	dead;
+
+	i = -1;
 	pthread_mutex_lock(&table->check);
-	if (!table->dead && (now - table->philos[i].last_meal >= (size_t)table->time_to_die))
-	{
-		print_status(&table->philos[i], DEAD, 1);
-		table->dead = 1;
-		pthread_mutex_unlock(&table->check);
-		return (1);
-	}
+	dead = !table->dead;
 	pthread_mutex_unlock(&table->check);
-	return (0);
-}
-
-static int check_philo_loop(t_dinner *table)
-{
-	int i;
-	size_t now;
-
-	i = 0;
-	now = time_now();
-	while (i < table->nb_philos)
+	while (dead && ++i < table->nb_philos)
 	{
-		if (check_one_philo(table, i, now))
-			return (1);
-		i++;
-	}
-	return (0);
-}
-
-int check_all_sated(t_dinner *table)
-{
-	int i;
-	int all_sated;
-
-	all_sated = 1;
-	if (table->nb_meals == -1)
-		return (0);
-	i = 0;
-	while (i < table->nb_philos)
-	{
-		if (table->philos[i].nb_meal < table->nb_meals)
+		pthread_mutex_lock(&table->check);
+		if ((time_now() - table->philos[i].last_meal) > (size_t)table->time_to_die)
 		{
-			all_sated = 0;
-			break;
+			print_status(&table->philos[i], DEAD, 1);
+			table->dead = 1;
 		}
-		i++;
+		pthread_mutex_unlock(&table->check);
+		usleep(100);
+		pthread_mutex_lock(&table->check);
+		dead = !table->dead;
+		pthread_mutex_unlock(&table->check);
 	}
-	return (all_sated);
+	return (table->dead);
 }
 
-int check_satiation(t_dinner *table)
+static void	check_philo_sated(t_dinner *table)
 {
-	int result;
+	int	i;
 
+	i = 0;
 	pthread_mutex_lock(&table->check);
-	result = check_all_sated(table);
-	if (result)
+	while ((table->nb_meals != -1) && (i < table->nb_philos) &&
+		(table->philos[i].nb_meal >= table->nb_meals))
+	{
+		i++;
+	}
+	if (i == table->nb_philos)
 		table->sated = 1;
 	pthread_mutex_unlock(&table->check);
-	return (result);
 }
 
-void check_death(t_dinner *table)
+void	check_death(t_dinner *table)
 {
-	while (1)
+	int	sated;
+	pthread_mutex_lock(&table->check);
+	sated = !table->sated;
+	pthread_mutex_unlock(&table->check);
+	while (sated)
 	{
-		if (check_philo_loop(table))
-			return ;
-		if (check_satiation(table))
-			return ;
-		usleep(100);
+		if (check_philo_death(table))
+			break;
+		pthread_mutex_lock(&table->check);
+		if (table->dead)
+			break ;
+		pthread_mutex_unlock(&table->check);
+		check_philo_sated(table);
+		pthread_mutex_lock(&table->check);
+		sated = !table->sated;
+		pthread_mutex_unlock(&table->check);
 	}
 }

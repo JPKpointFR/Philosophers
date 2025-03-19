@@ -6,7 +6,7 @@
 /*   By: cisse <cisse@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 20:05:58 by cisse             #+#    #+#             */
-/*   Updated: 2025/03/18 23:28:00 by cisse            ###   ########.fr       */
+/*   Updated: 2025/03/19 21:16:01 by cisse            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 static void assign_forks(t_philo *philo, pthread_mutex_t **first, pthread_mutex_t **second)
 {
-	if (&philo->fork < &philo->next->fork)
+	if (philo->id % 2 == 0)
 	{
 		*first = &philo->fork;
 		*second = &philo->next->fork;
@@ -38,7 +38,7 @@ static void lock_forks(t_philo *philo, pthread_mutex_t *first, pthread_mutex_t *
 		philo->table->dead = 1;
 		pthread_mutex_unlock(&philo->table->check);
 		pthread_mutex_unlock(&philo->fork);
-		return;
+		return ;
 	}
 	pthread_mutex_lock(first);
 	print_status(philo, FORK, 0);
@@ -54,8 +54,8 @@ static void eat_and_release(t_philo *philo, pthread_mutex_t *first, pthread_mute
 	pthread_mutex_lock(&table->check);
 	philo->last_meal = time_now();
 	philo->nb_meal++;
-	print_status(philo, EAT, 1);
 	pthread_mutex_unlock(&table->check);
+	print_status(philo, EAT, 0);
 	waste_time(table, table->time_to_eat);
 	pthread_mutex_unlock(second);
 	pthread_mutex_unlock(first);
@@ -66,6 +66,13 @@ static void eaten(t_philo *philo)
 	pthread_mutex_t *first_fork;
 	pthread_mutex_t *second_fork;
 
+	pthread_mutex_lock(&philo->table->check);
+	if (philo->table->dead)
+	{
+		pthread_mutex_unlock(&philo->table->check);
+		return ;
+	}
+	pthread_mutex_unlock(&philo->table->check);
 	assign_forks(philo, &first_fork, &second_fork);
 	lock_forks(philo, first_fork, second_fork);
 	if (philo->table->nb_philos == 1)
